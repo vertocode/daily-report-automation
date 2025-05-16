@@ -27,7 +27,7 @@ def get_jira_tasks():
     issues = response.json().get('issues', [])
 
     rich_text_elements = []
-    current_project = ""
+    projects_added = set()
 
     for issue in issues:
         fields = issue['fields']
@@ -67,14 +67,14 @@ def get_jira_tasks():
                 user_worklogs_today.append(comment_text or 'Work logged with no comment.')
 
         if user_worklogs_today:
-            if current_project != project_name:
-                current_project = project_name
+            if project_name not in projects_added:
+                projects_added.add(project_name)
                 rich_text_elements.append({
                     "type": "rich_text_section",
                     "elements": [
                         {
                             "type": "text",
-                            "text": f"📂 {current_project}",
+                            "text": f"📂 {project_name}",
                             "style": {
                                 "bold": True
                             }

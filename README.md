@@ -16,6 +16,12 @@ cd daily-report-automation
 cp .env.sample .env
 ```
 
+3. Create a python env(recommended/optional), and run the dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
 3. Run the `main.py`
 
 ```bash

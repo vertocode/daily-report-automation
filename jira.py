@@ -26,8 +26,7 @@ def get_jira_tasks():
     response = requests.get(url, headers=headers, auth=auth, params=params)
     issues = response.json().get('issues', [])
 
-    rich_text_elements = []
-    projects_added = set()
+    project_groups = {}
 
     for issue in issues:
         fields = issue['fields']
@@ -67,22 +66,33 @@ def get_jira_tasks():
                 user_worklogs_today.append(comment_text or 'Work logged with no comment.')
 
         if user_worklogs_today:
-            if project_name not in projects_added:
-                projects_added.add(project_name)
-                rich_text_elements.append({
-                    "type": "rich_text_section",
-                    "elements": [
-                        {
-                            "type": "text",
-                            "text": f"📂 {project_name}",
-                            "style": {
-                                "bold": True
-                            }
-                        }
-                    ]
-                })
+            if project_name not in project_groups:
+                project_groups[project_name] = []
 
-            task_item = {
+            project_groups[project_name].append({
+                "summary": summary,
+                "issue_url": issue_url,
+                "comments": user_worklogs_today
+            })
+
+    rich_text_elements = []
+
+    for project_name, tasks in project_groups.items():
+        rich_text_elements.append({
+            "type": "rich_text_section",
+            "elements": [
+                {
+                    "type": "text",
+                    "text": f"📂 {project_name}",
+                    "style": {
+                        "bold": True
+                    }
+                }
+            ]
+        })
+
+        for task in tasks:
+            rich_text_elements.append({
                 "type": "rich_text_list",
                 "style": "bullet",
                 "indent": 0,
@@ -92,13 +102,13 @@ def get_jira_tasks():
                         "elements": [
                             {
                                 "type": "link",
-                                "url": issue_url,
-                                "text": summary
+                                "url": task["issue_url"],
+                                "text": task["summary"]
                             }
                         ]
                     }
                 ]
-            }
+            })
 
             comment_items = {
                 "type": "rich_text_list",
@@ -107,7 +117,7 @@ def get_jira_tasks():
                 "elements": []
             }
 
-            for comment_text in user_worklogs_today:
+            for comment_text in task["comments"]:
                 lines = comment_text.split('\n')
                 for line in lines:
                     if line.strip():
@@ -121,7 +131,6 @@ def get_jira_tasks():
                             ]
                         })
 
-            rich_text_elements.append(task_item)
             rich_text_elements.append(comment_items)
 
     return {

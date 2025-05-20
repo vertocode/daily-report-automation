@@ -45,21 +45,33 @@ def get_jira_tasks():
 
                 def extract_comment_text(comment):
                     if isinstance(comment, dict) and comment.get('type') == 'doc':
-                        text_parts = []
+                        lines = []
+
                         for content_block in comment.get('content', []):
+                            line_parts = []
+
                             if content_block['type'] == 'paragraph' and 'content' in content_block:
                                 for inner in content_block['content']:
                                     if 'text' in inner:
-                                        text_parts.append(inner['text'])
+                                        line_parts.append(inner['text'])
+                                if line_parts:
+                                    lines.append(''.join(line_parts))
+
                             elif content_block['type'] == 'bulletList':
                                 for item in content_block.get('content', []):
                                     for paragraph in item.get('content', []):
+                                        part_line = []
                                         for inner in paragraph.get('content', []):
                                             if 'text' in inner:
-                                                text_parts.append(inner['text'])
-                        return '\n'.join(text_parts).strip()
+                                                part_line.append(inner['text'])
+                                        if part_line:
+                                            lines.append(''.join(part_line))
+
+                        return '\n'.join(lines).strip()
+
                     elif isinstance(comment, str):
                         return comment.strip()
+
                     return ''
 
                 comment_text = extract_comment_text(comment)
